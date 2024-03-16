@@ -38,7 +38,8 @@ def get_temperatures():
 # Create a new Tkinter window
 window = Tk()
 window.attributes('-alpha', 1.0)
-
+window.attributes('-topmost', 1)  # This line keeps the window on top
+ 
 # Hide the window bar
 window.overrideredirect(True)
 
@@ -85,8 +86,8 @@ def close_window(event):
 canvas.tag_bind(close_button, '<Button-1>', close_window)
 canvas.pack()
 
-# Position the window at the top right of the screen
-window.geometry('+%d+%d' % (window.winfo_screenwidth()-120, 10))
+# Position the window at the lower left of the screen, 200 pixels from the bottom
+window.geometry('+%d+%d' % (0, window.winfo_screenheight() - window.winfo_height() - 180))
 
 # Create a dictionary to store the last 10 temperatures for each GPU
 last_n_temps = {}
@@ -95,6 +96,17 @@ device_elements = []
 def update_temperatures():
     # Fetch the temperatures
     temps = get_temperatures()
+
+    # Check if the window is outside the screen's dimensions
+    if window.winfo_x() < 0 or window.winfo_x() > window.winfo_screenwidth() or window.winfo_y() < 0 or window.winfo_y() > window.winfo_screenheight():
+        # If it is, reset the window's position to the starting position
+        window.geometry('+%d+%d' % (0, window.winfo_screenheight() - window.winfo_height() - 180))
+
+    # Make the window always stay on top, but without taking focus
+    window.attributes('-topmost', 1)
+
+    # Prevent the window from taking focus when it is initially created
+    window.overrideredirect(True)
     
     # Set the canvas height based on the number of GPUs
     canvas.config(width=100, height=30 * len(temps))
