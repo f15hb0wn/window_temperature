@@ -143,7 +143,7 @@ def update_temperatures():
         
         # Create the circle and text elements with the color determined above
         circle = canvas.create_oval(5, 5 + i * 30, 20, 20 + i * 30, fill=color)
-        text = canvas.create_text(25, 15 + i * 30, anchor='w', font=("Arial", 8), fill='yellow', text=f"{device_name}: {avg_temp}°")
+        text = canvas.create_text(25, 15 + i * 30, anchor='w', font=("Arial", 8), fill='white', text=f"{device_name}: {avg_temp}°")
     
         # Add the elements to the list
         device_elements.append((circle, text))
