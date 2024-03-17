@@ -16,5 +16,5 @@ I wanted a simple widget to display GPU and CPU temperatures to have the followi
 - Download this code and change directory to it.
 - Install dependencies: `pip install -r requirements.txt`
 - Optional: Edit the constants at the top of `app.py`
-- Run `python app.py`(as Administrator)
+- Run `python app.py`
 
