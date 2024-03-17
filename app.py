@@ -6,6 +6,8 @@ import wmi
 # Set the temperature thresholds
 CAUTION_TEMP= 75
 DANGER_TEMP= 90
+NETOPS_CAUTION = 100
+DISKOPS_CAUTION = 100
 # Set the polling interval in milliseconds
 POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
@@ -281,16 +283,28 @@ def update_temperatures():
     # Add Network Up and Down
     net = get_network()
     i = net_row + 1
-    circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill="blue")
-    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t↑ {net[0]}Mb\t|\t ↓{net[1]}Mb")
-    device_elements.append((circle, text))
+    color = 'blue'
+    total_net = net[0] + net[1]
+    if total_net > 0:
+        color = 'green'
+    if total_net > NETOPS_CAUTION:
+        color = 'yellow'
+    shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
+    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t{net[0]}Mb ↑\t|\t {net[1]}Mb ↓")
+    device_elements.append((shape, text))
 
     #Add Disk Ops
     disk = get_disk()
     i = i + 1
-    circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill="blue")
-    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t↑ {disk[0]}MB\t|\t ↓ {disk[1]}MB")
-    device_elements.append((circle, text))
+    color = 'blue'
+    total_disk = disk[0] + disk[1]
+    if total_disk > 0:
+        color = 'green'
+    if total_disk > DISKOPS_CAUTION:
+        color = 'yellow'
+    shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
+    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t{disk[0]}MB ↑\t|\t{disk[1]}MB ↓")
+    device_elements.append((shape, text))
     # Remember the window's current position and size
     x = window.winfo_x()
     y = window.winfo_y()
