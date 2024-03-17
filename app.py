@@ -124,8 +124,8 @@ def get_network():
             up = sensor.Value + up
         if sensor.Name == "Download Speed":
             down = sensor.Value + down
-    up = round(up / 1024 / 1024)
-    down = round(down / 1024 / 1024)
+    up = round(up / 1024 / 128)
+    down = round(down / 1024 / 128)
     values.append(up)
     values.append(down)
     
