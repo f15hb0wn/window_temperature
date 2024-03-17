@@ -8,6 +8,7 @@ CAUTION_TEMP= 75
 DANGER_TEMP= 90
 NETOPS_CAUTION = 100
 DISKOPS_CAUTION = 100
+UTILIZATION_CAUTION = 95
 # Set the polling interval in milliseconds
 POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
@@ -261,16 +262,16 @@ def update_temperatures():
         else:
             color = 'red'
         
-
         # Create the circle and text elements with the color determined above
         try:
             
-            if utils[i][1] > 90:
+            if utils[i][1] > UTILIZATION_CAUTION:
                 if color == 'red':
-                    util_color = 'red'
+                    # Heat overrides utilization warning
+                    shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
                 else:
                     util_color = 'yellow'
-                shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=util_color)
+                    shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=util_color)
             else:
                 shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
             text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
