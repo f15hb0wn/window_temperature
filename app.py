@@ -4,11 +4,11 @@ import gpustat
 import wmi
 
 # Set the temperature thresholds
-CAUTION_TEMP= 75
-DANGER_TEMP= 90
-NETOPS_CAUTION = 200
-DISKOPS_CAUTION = 200
-UTILIZATION_CAUTION = 95
+CAUTION_TEMP= 75 # Set the temperature at which the thermal circle turns yellow
+DANGER_TEMP= 90 # Set the temperature at which the themal circle turns red
+NETOPS_CAUTION = 200 # Set the network operations caution in Mbps
+DISKOPS_CAUTION = 200 # Set the disk operations caution in MBps
+UTILIZATION_CAUTION = 95 # Set the utilization caution in percentage
 # Set the polling interval in milliseconds
 POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
