@@ -16,8 +16,13 @@ MAX_CPU_MHZ = 5500
 DISK_ID = "/nvme/2"
 # Set width of the window
 WIDTH = 280
+# Set the height of each row
 ROW_HEIGHT = 20
+# Set the font size
 FONT_SIZE = 8
+# Set the Location to load the window
+X_LOCATION = 0
+Y_LOCATION = 200
 
 
 def get_temperatures():
@@ -198,7 +203,7 @@ canvas.tag_bind(close_button, '<Button-1>', close_window)
 canvas.pack()
 
 # Position the window at the lower left of the screen, 200 pixels from the bottom
-window.geometry('+%d+%d' % (0, window.winfo_screenheight() - window.winfo_height() - 180))
+window.geometry('+%d+%d' % (X_LOCATION, window.winfo_screenheight() - window.winfo_height() - Y_LOCATION))
 
 # Create a dictionary to store the last 10 temperatures for each GPU
 last_n_temps = {}
