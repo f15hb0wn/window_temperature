@@ -99,6 +99,30 @@ def get_utilizations():
     
     return values
 
+def get_network():
+    values = []
+    
+    # Connect to the OpenHardwareMonitor namespace
+    w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+
+    # Get temperature sensor information
+    values_infos = w.Sensor()
+
+    # Iterate through sensors and print CPU temperature
+    up = 0
+    down = 0
+    for sensor in values_infos:
+        if sensor.Name == "Upload Speed":
+            up = sensor.Value + up
+        if sensor.Name == "Download Speed":
+            down = sensor.Value + down
+    up = round(up / 1024 / 1024)
+    down = round(down / 1024 / 1024)
+    values.append(up)
+    values.append(down)
+    
+    return values
+
 # Create a new Tkinter window
 window = Tk()
 window.attributes('-alpha', 1.0)
@@ -136,7 +160,7 @@ window.attributes('-topmost', 1)
 # Create a canvas to draw on
 # Create a canvas to draw on
 temps = get_temperatures()
-height=ROW_HEIGHT * len(temps) +10
+height=ROW_HEIGHT * (len(temps)+1) +10
 canvas = Canvas(window, width=WIDTH, height=height, bd=0, highlightthickness=0, bg='black')
 
 
@@ -185,6 +209,7 @@ def update_temperatures():
         canvas.delete(text)
     device_elements.clear()
     
+    net_row = 0
     # Calculate the average temperature for each GPU and create the new elements
     for i, (device_name, temp) in enumerate(temps):
         # If this is a new GPU, create a new deque for it
@@ -207,12 +232,22 @@ def update_temperatures():
         
 
         # Create the circle and text elements with the color determined above
-        circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
-        text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
+        try:
+            circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
+            text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
+        except:
+            continue
     
         # Add the elements to the list
         device_elements.append((circle, text))
+        net_row = i
     
+    # Add Network Up and Down
+    net = get_network()
+    i = net_row + 1
+    circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill="blue")
+    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"UL|DL\t|\t{net[0]}Mbps\t|\t{net[1]}Mbps")
+    device_elements.append((circle, text))
     # Remember the window's current position and size
     x = window.winfo_x()
     y = window.winfo_y()
