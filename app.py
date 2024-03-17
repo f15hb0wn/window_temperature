@@ -14,7 +14,7 @@ POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
 NUM_SAMPLES = 30
 # Consecutive samples to consider for utilization
-UTIL_SAMPLES = 5
+UTIL_SAMPLES = 10
 # Set the maximum CPU frequency in MHz
 MAX_CPU_MHZ = 5500
 # Set the ID of the disk to monitor
@@ -284,7 +284,7 @@ def update_temperatures():
                         shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
             else:
                 shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
-                util_poll_samples[i]
+                util_poll_samples[i] = util_poll_samples[i] - 1
             text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
 
             # Add the elements to the list
@@ -310,7 +310,7 @@ def update_temperatures():
             if util_poll_samples[i] > UTIL_SAMPLES:
                 color = 'blue'
     if total_net < NETOPS_CAUTION and total_net > 0:
-        util_poll_samples[i] = 0
+        util_poll_samples[i] = util_poll_samples[i] - 1
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t{net[0]}Mb ↑\t|\t {net[1]}Mb ↓")
     device_elements.append((shape, text))
@@ -333,7 +333,7 @@ def update_temperatures():
             if util_poll_samples[i] > UTIL_SAMPLES:
                 color = 'blue'
     if total_disk < DISKOPS_CAUTION and total_disk > 0:
-        util_poll_samples[i] = 0
+        util_poll_samples[i] = util_poll_samples[i] - 1
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t{disk[0]}MB ↑\t|\t{disk[1]}MB ↓")
     device_elements.append((shape, text))
