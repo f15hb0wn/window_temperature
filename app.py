@@ -297,15 +297,19 @@ def update_temperatures():
     i = net_row + 1
     if len(util_poll_samples) <= i:
         util_poll_samples.append(0)
-    color = 'blue'
+    color = 'green'
     total_net = net[0] + net[1]
     if total_net > 0:
-        color = 'green'
-    if total_net > NETOPS_CAUTION:
-        util_poll_samples[i] = util_poll_samples[i] + 1
-        if util_poll_samples[i] > UTIL_SAMPLES:
-            color = 'yellow'
+        if total_net > NETOPS_CAUTION:
+            util_poll_samples[i] = util_poll_samples[i] + 1
+            if util_poll_samples[i] > UTIL_SAMPLES:
+                color = 'yellow'
     else:
+        if total_net == 0:
+            util_poll_samples[i] = util_poll_samples[i] + 1
+            if util_poll_samples[i] > UTIL_SAMPLES:
+                color = 'blue'
+    if total_net < NETOPS_CAUTION and total_net > 0:
         util_poll_samples[i] = 0
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t{net[0]}Mb ↑\t|\t {net[1]}Mb ↓")
@@ -316,15 +320,19 @@ def update_temperatures():
     i = i + 1
     if len(util_poll_samples) <= i:
         util_poll_samples.append(0)
-    color = 'blue'
+    color = 'green'
     total_disk = disk[0] + disk[1]
     if total_disk > 0:
-        color = 'green'
-    if total_disk > DISKOPS_CAUTION:
-        util_poll_samples[i] = util_poll_samples[i] + 1
-        if util_poll_samples[i] > UTIL_SAMPLES:
-            color = 'yellow'
+        if total_net > DISKOPS_CAUTION:
+            util_poll_samples[i] = util_poll_samples[i] + 1
+            if util_poll_samples[i] > UTIL_SAMPLES:
+                color = 'yellow'
     else:
+        if total_disk == 0:
+            util_poll_samples[i] = util_poll_samples[i] + 1
+            if util_poll_samples[i] > UTIL_SAMPLES:
+                color = 'blue'
+    if total_disk < DISKOPS_CAUTION and total_disk > 0:
         util_poll_samples[i] = 0
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t{disk[0]}MB ↑\t|\t{disk[1]}MB ↓")
