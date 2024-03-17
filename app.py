@@ -123,6 +123,30 @@ def get_network():
     
     return values
 
+def get_disk():
+    values = []
+    
+    # Connect to the OpenHardwareMonitor namespace
+    w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+
+    # Get temperature sensor information
+    values_infos = w.Sensor()
+
+    # Iterate through sensors and print CPU temperature
+    up = 0
+    down = 0
+    for sensor in values_infos:
+        if sensor.Name == "Read Rate":
+            up = sensor.Value + up
+        if sensor.Name == "Write Rate":
+            down = sensor.Value + down
+    up = round(up / 1024 / 1024)
+    down = round(down / 1024 / 1024)
+    values.append(up)
+    values.append(down)
+    
+    return values
+
 # Create a new Tkinter window
 window = Tk()
 window.attributes('-alpha', 1.0)
@@ -160,7 +184,7 @@ window.attributes('-topmost', 1)
 # Create a canvas to draw on
 # Create a canvas to draw on
 temps = get_temperatures()
-height=ROW_HEIGHT * (len(temps)+1) +10
+height=ROW_HEIGHT * (len(temps)+2) +10
 canvas = Canvas(window, width=WIDTH, height=height, bd=0, highlightthickness=0, bg='black')
 
 
@@ -197,7 +221,7 @@ def update_temperatures():
     window.overrideredirect(True)
     
     # Set the canvas height based on the number of GPUs
-    canvas.config(width=WIDTH, height=ROW_HEIGHT * len(temps))
+    canvas.config(width=WIDTH, height=ROW_HEIGHT * (len(temps)+2))
     
     # Set the window height based on the number of GPUs
     window.geometry(f'{WIDTH}x{ROW_HEIGHT * len(temps)}+{window.winfo_x()}+{window.winfo_y()}')
@@ -249,12 +273,18 @@ def update_temperatures():
         # Add the elements to the list
         device_elements.append((shape, text))
         net_row = i
-    
     # Add Network Up and Down
     net = get_network()
     i = net_row + 1
     circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill="blue")
-    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"UL|DL\t|\t{net[0]}Mbps\t|\t{net[1]}Mbps")
+    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t↑ {net[0]}Mb\t|\t ↓{net[1]}Mb")
+    device_elements.append((circle, text))
+
+    #Add Disk Ops
+    disk = get_disk()
+    i = i + 1
+    circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill="blue")
+    text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t↑ {disk[0]}MB\t|\t ↓ {disk[1]}MB")
     device_elements.append((circle, text))
     # Remember the window's current position and size
     x = window.winfo_x()
@@ -264,7 +294,7 @@ def update_temperatures():
     
     # Resize the window and canvas to fit the new elements
     window.geometry(f'{WIDTH}x{height}+{x}+{y}')
-    canvas.config(width=WIDTH, height=30 * len(temps))
+    canvas.config(width=WIDTH, height=30 * (len(temps)+2))
     
     # Schedule the next update
     window.after(POLL_INTERVAL_MS, update_temperatures)
