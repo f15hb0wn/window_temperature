@@ -6,8 +6,8 @@ import wmi
 # Set the temperature thresholds
 CAUTION_TEMP= 75
 DANGER_TEMP= 90
-NETOPS_CAUTION = 100
-DISKOPS_CAUTION = 100
+NETOPS_CAUTION = 200
+DISKOPS_CAUTION = 200
 UTILIZATION_CAUTION = 95
 # Set the polling interval in milliseconds
 POLL_INTERVAL_MS = 1000
