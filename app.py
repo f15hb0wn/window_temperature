@@ -4,7 +4,7 @@ import gpustat
 import wmi
 
 # Set the temperature thresholds
-CAUTION_TEMP= 75 # Set the temperature at which the thermal circle turns yellow
+CAUTION_TEMP= 80 # Set the temperature at which the thermal circle turns yellow
 DANGER_TEMP= 90 # Set the temperature at which the themal circle turns red
 NETOPS_CAUTION = 200 # Set the network operations caution in Mbps
 DISKOPS_CAUTION = 200 # Set the disk operations caution in MBps
@@ -197,7 +197,7 @@ canvas = Canvas(window, width=WIDTH, height=height, bd=0, highlightthickness=0, 
 
 
 # Create a red "X" in the upper right that closes the window when clicked
-close_button = canvas.create_text(window.winfo_width() - 10, 10, anchor='ne', font=("Arial", 8), fill='red', text="X")
+close_button = canvas.create_text(window.winfo_width() - 10, 10, anchor='ne', font=("Arial", 8), fill='white', text="X")
 
 def close_window(event):
     window.destroy()
