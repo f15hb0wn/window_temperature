@@ -9,7 +9,11 @@ DANGER_TEMP= 90
 # Set the polling interval in milliseconds
 POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
-NUM_SAMPLES = 10
+NUM_SAMPLES = 30
+# Set the maximum CPU frequency in MHz
+MAX_CPU_MHZ = 5500
+# Set width of the window
+WIDTH = 280
 
 def get_temperatures():
     temps = []
@@ -17,7 +21,7 @@ def get_temperatures():
     stats = gpustat.new_query()
     id = 0
     for gpu in stats.gpus:
-        device_name = "GPU " + str(id)
+        device_name = "GPU-" + str(id)
         id += 1
         temps.append((device_name, gpu.temperature))
     
@@ -29,11 +33,55 @@ def get_temperatures():
     temperature_infos = w.Sensor()
 
     # Iterate through sensors and print CPU temperature
+    cpu_temp = 0
+    system_temp = 0
     for sensor in temperature_infos:
-        if sensor.SensorType == u'Temperature' and sensor.Name == "Core Average":
-            temps.append(("CPU  ", sensor.Value))
+        if sensor.SensorType == u'Temperature' and sensor.Name == "CPU Socket":
+            cpu_temp = sensor.Value
+        if sensor.SensorType == u'Temperature' and sensor.Name == "System":
+            system_temp = sensor.Value        
+    temps.append(("CPU", cpu_temp))
+    temps.append(("RAM", system_temp))
     
     return temps
+
+def get_utilizations():
+    values = []
+    # Get GPU temperatures
+    stats = gpustat.new_query()
+    id = 0
+    for gpu in stats.gpus:
+        device_name = "GPU-" + str(id)
+        id += 1
+        values.append((device_name, gpu.utilization))
+    
+    # Get CPU temperature
+    # Connect to the OpenHardwareMonitor namespace
+    w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+
+    # Get temperature sensor information
+    values_infos = w.Sensor()
+
+    # Iterate through sensors and print CPU temperature
+    cpu_total = 0
+    cpu_speed = MAX_CPU_MHZ
+    ram_used = 0
+    for sensor in values_infos:
+        if sensor.SensorType == u'Load' and sensor.Name == "CPU Total":
+            cpu_total = sensor.Value
+        if sensor.SensorType == u'Clock' and sensor.Name == "CPU Core #1":
+            cpu_speed = sensor.Value
+        if sensor.SensorType == u'Load' and sensor.Name == "Memory":
+            ram_used = sensor.Value
+    realized_speed = cpu_speed / MAX_CPU_MHZ
+    acutal_cpu = cpu_total * realized_speed
+    # Round the CPU utilization to the nearest whole number
+    acutal_cpu = round(acutal_cpu)
+    values.append(("CPU", acutal_cpu))
+    ram_used = round(ram_used)
+    values.append(("RAM", ram_used))
+    
+    return values
 
 # Create a new Tkinter window
 window = Tk()
@@ -73,10 +121,9 @@ window.attributes('-topmost', 1)
 # Create a canvas to draw on
 temps = get_temperatures()
 height=30 * len(temps)
-canvas = Canvas(window, width=100, height=height, bd=0, highlightthickness=0, bg='black')
+canvas = Canvas(window, width=WIDTH, height=height, bd=0, highlightthickness=0, bg='black')
 
-# Pack the canvas with 30% padding
-canvas.pack(padx=0.3*window.winfo_width(), pady=0.3*window.winfo_height())
+
 # Create a red "X" in the upper right that closes the window when clicked
 close_button = canvas.create_text(window.winfo_width() - 10, 10, anchor='ne', font=("Arial", 8), fill='red', text="X")
 
@@ -96,6 +143,7 @@ device_elements = []
 def update_temperatures():
     # Fetch the temperatures
     temps = get_temperatures()
+    utils = get_utilizations()
 
     # Check if the window is outside the screen's dimensions
     if window.winfo_x() < 0 or window.winfo_x() > window.winfo_screenwidth() or window.winfo_y() < 0 or window.winfo_y() > window.winfo_screenheight():
@@ -109,10 +157,10 @@ def update_temperatures():
     window.overrideredirect(True)
     
     # Set the canvas height based on the number of GPUs
-    canvas.config(width=100, height=30 * len(temps))
+    canvas.config(width=WIDTH, height=30 * len(temps))
     
     # Set the window height based on the number of GPUs
-    window.geometry(f'100x{30 * len(temps)}+{window.winfo_x()}+{window.winfo_y()}')
+    window.geometry(f'{WIDTH}x{30 * len(temps)}+{window.winfo_x()}+{window.winfo_y()}')
     window.attributes('-alpha', 1.0)
 
     # Remove the old Device elements
@@ -143,7 +191,7 @@ def update_temperatures():
         
         # Create the circle and text elements with the color determined above
         circle = canvas.create_oval(5, 5 + i * 30, 20, 20 + i * 30, fill=color)
-        text = canvas.create_text(25, 15 + i * 30, anchor='w', font=("Arial", 8), fill='white', text=f"{device_name}: {avg_temp}°")
+        text = canvas.create_text(25, 15 + i * 30, anchor='w', font=("Arial", 8), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
     
         # Add the elements to the list
         device_elements.append((circle, text))
@@ -151,12 +199,12 @@ def update_temperatures():
     # Remember the window's current position and size
     x = window.winfo_x()
     y = window.winfo_y()
-    width = window.winfo_width()
+
     height = window.winfo_height()
     
     # Resize the window and canvas to fit the new elements
-    window.geometry(f'{width}x{height}+{x}+{y}')
-    canvas.config(width=100, height=30 * len(temps))
+    window.geometry(f'{WIDTH}x{height}+{x}+{y}')
+    canvas.config(width=WIDTH, height=30 * len(temps))
     
     # Schedule the next update
     window.after(POLL_INTERVAL_MS, update_temperatures)
