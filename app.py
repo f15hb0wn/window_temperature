@@ -13,6 +13,8 @@ UTILIZATION_CAUTION = 95 # Set the utilization caution in percentage
 POLL_INTERVAL_MS = 1000
 # Set the number of temperature samples to keep
 NUM_SAMPLES = 30
+# Consecutive samples to consider for utilization
+UTIL_SAMPLES = 5
 # Set the maximum CPU frequency in MHz
 MAX_CPU_MHZ = 5500
 # Set the ID of the disk to monitor
@@ -211,6 +213,7 @@ window.geometry('+%d+%d' % (X_LOCATION, window.winfo_screenheight() - window.win
 # Create a dictionary to store the last 10 temperatures for each GPU
 last_n_temps = {}
 device_elements = []
+util_poll_samples = []
 
 def update_temperatures():
     # Fetch the temperatures
@@ -244,6 +247,10 @@ def update_temperatures():
     net_row = 0
     # Calculate the average temperature for each GPU and create the new elements
     for i, (device_name, temp) in enumerate(temps):
+        # Set util samples if not set
+        if len(util_poll_samples) <= i:
+            util_poll_samples.append(0)
+
         # If this is a new GPU, create a new deque for it
         if device_name not in last_n_temps:
             last_n_temps[device_name] = deque(maxlen=NUM_SAMPLES)
@@ -263,33 +270,43 @@ def update_temperatures():
             color = 'red'
         
         # Create the circle and text elements with the color determined above
-        try:
-            
+        try:         
             if utils[i][1] > UTILIZATION_CAUTION:
+                util_poll_samples[i] = util_poll_samples[i] + 1
                 if color == 'red':
                     # Heat overrides utilization warning
                     shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
                 else:
-                    util_color = 'yellow'
-                    shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=util_color)
+                    if util_poll_samples[i] > UTIL_SAMPLES:        
+                        util_color = 'yellow'
+                        shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=util_color)
+                    else:
+                        shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
             else:
                 shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
+                util_poll_samples[i]
             text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
+
+            # Add the elements to the list
+            device_elements.append((shape, text))
         except:
             continue
-    
-        # Add the elements to the list
-        device_elements.append((shape, text))
         net_row = i
     # Add Network Up and Down
     net = get_network()
     i = net_row + 1
+    if len(util_poll_samples) <= i:
+        util_poll_samples.append(0)
     color = 'blue'
     total_net = net[0] + net[1]
     if total_net > 0:
         color = 'green'
     if total_net > NETOPS_CAUTION:
-        color = 'yellow'
+        util_poll_samples[i] = util_poll_samples[i] + 1
+        if util_poll_samples[i] > UTIL_SAMPLES:
+            color = 'yellow'
+    else:
+        util_poll_samples[i] = 0
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"NET IO\t|\t{net[0]}Mb ↑\t|\t {net[1]}Mb ↓")
     device_elements.append((shape, text))
@@ -297,12 +314,18 @@ def update_temperatures():
     #Add Disk Ops
     disk = get_disk()
     i = i + 1
+    if len(util_poll_samples) <= i:
+        util_poll_samples.append(0)
     color = 'blue'
     total_disk = disk[0] + disk[1]
     if total_disk > 0:
         color = 'green'
     if total_disk > DISKOPS_CAUTION:
-        color = 'yellow'
+        util_poll_samples[i] = util_poll_samples[i] + 1
+        if util_poll_samples[i] > UTIL_SAMPLES:
+            color = 'yellow'
+    else:
+        util_poll_samples[i] = 0
     shape = canvas.create_rectangle(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
     text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"DISK IO\t|\t{disk[0]}MB ↑\t|\t{disk[1]}MB ↓")
     device_elements.append((shape, text))
