@@ -12,8 +12,13 @@ POLL_INTERVAL_MS = 1000
 NUM_SAMPLES = 30
 # Set the maximum CPU frequency in MHz
 MAX_CPU_MHZ = 5500
+# Set the ID of the disk to monitor
+DISK_ID = "/nvme/2"
 # Set width of the window
 WIDTH = 280
+ROW_HEIGHT = 20
+FONT_SIZE = 8
+
 
 def get_temperatures():
     temps = []
@@ -35,13 +40,18 @@ def get_temperatures():
     # Iterate through sensors and print CPU temperature
     cpu_temp = 0
     system_temp = 0
+    hdd_temp = False
     for sensor in temperature_infos:
         if sensor.SensorType == u'Temperature' and sensor.Name == "CPU Socket":
             cpu_temp = sensor.Value
         if sensor.SensorType == u'Temperature' and sensor.Name == "System":
-            system_temp = sensor.Value        
+            system_temp = sensor.Value
+        if sensor.SensorType == u'Temperature' and sensor.Name == "Temperature" and sensor.Parent == DISK_ID:
+            hdd_temp = sensor.Value        
     temps.append(("CPU", cpu_temp))
     temps.append(("RAM", system_temp))
+    if hdd_temp:
+        temps.append(("DISK", hdd_temp))
     
     return temps
 
@@ -66,6 +76,7 @@ def get_utilizations():
     cpu_total = 0
     cpu_speed = MAX_CPU_MHZ
     ram_used = 0
+    hdd_used = False
     for sensor in values_infos:
         if sensor.SensorType == u'Load' and sensor.Name == "CPU Total":
             cpu_total = sensor.Value
@@ -73,6 +84,8 @@ def get_utilizations():
             cpu_speed = sensor.Value
         if sensor.SensorType == u'Load' and sensor.Name == "Memory":
             ram_used = sensor.Value
+        if sensor.SensorType == u'Load' and sensor.Name == "Total Activity" and sensor.Parent == DISK_ID:
+            hdd_used = sensor.Value
     realized_speed = cpu_speed / MAX_CPU_MHZ
     acutal_cpu = cpu_total * realized_speed
     # Round the CPU utilization to the nearest whole number
@@ -80,6 +93,9 @@ def get_utilizations():
     values.append(("CPU", acutal_cpu))
     ram_used = round(ram_used)
     values.append(("RAM", ram_used))
+    if hdd_used:
+        hdd_used = round(hdd_used)
+        values.append(("DISK", hdd_used))
     
     return values
 
@@ -120,7 +136,7 @@ window.attributes('-topmost', 1)
 # Create a canvas to draw on
 # Create a canvas to draw on
 temps = get_temperatures()
-height=30 * len(temps)
+height=ROW_HEIGHT * len(temps) +10
 canvas = Canvas(window, width=WIDTH, height=height, bd=0, highlightthickness=0, bg='black')
 
 
@@ -157,10 +173,10 @@ def update_temperatures():
     window.overrideredirect(True)
     
     # Set the canvas height based on the number of GPUs
-    canvas.config(width=WIDTH, height=30 * len(temps))
+    canvas.config(width=WIDTH, height=ROW_HEIGHT * len(temps))
     
     # Set the window height based on the number of GPUs
-    window.geometry(f'{WIDTH}x{30 * len(temps)}+{window.winfo_x()}+{window.winfo_y()}')
+    window.geometry(f'{WIDTH}x{ROW_HEIGHT * len(temps)}+{window.winfo_x()}+{window.winfo_y()}')
     window.attributes('-alpha', 1.0)
 
     # Remove the old Device elements
@@ -189,9 +205,10 @@ def update_temperatures():
         else:
             color = 'red'
         
+
         # Create the circle and text elements with the color determined above
-        circle = canvas.create_oval(5, 5 + i * 30, 20, 20 + i * 30, fill=color)
-        text = canvas.create_text(25, 15 + i * 30, anchor='w', font=("Arial", 8), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
+        circle = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
+        text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
     
         # Add the elements to the list
         device_elements.append((circle, text))
