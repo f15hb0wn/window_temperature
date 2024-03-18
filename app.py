@@ -18,7 +18,7 @@ UTIL_SAMPLES = 10
 # Set the maximum CPU frequency in MHz
 MAX_CPU_MHZ = 5500
 # Set the ID of the disk to monitor
-DISK_ID = "/nvme/2"
+DISK_ID = "disable"
 # Set width of the window
 WIDTH = 280
 # Set the height of each row
@@ -26,8 +26,8 @@ ROW_HEIGHT = 20
 # Set the font size
 FONT_SIZE = 8
 # Set the Location to load the window
-X_LOCATION = 0
-Y_LOCATION = 200
+X_LOCATION = 300
+Y_LOCATION = 180
 
 
 def get_temperatures():
