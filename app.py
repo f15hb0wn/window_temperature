@@ -88,7 +88,8 @@ def get_utilizations():
     for sensor in values_infos:
         if sensor.SensorType == u'Load' and sensor.Name == "GPU Core":
             gpu_id = gpus.index(sensor.Parent)
-            values.append(("GPU-" + str(gpu_id), sensor.Value))
+            gpu_speed = round(sensor.Value)
+            values.append(("GPU-" + str(gpu_id), gpu_speed))
         if sensor.SensorType == u'Load' and sensor.Name == "CPU Total":
             cpu_total = sensor.Value
         if sensor.SensorType == u'Clock' and sensor.Name == "CPU Core #1":
