@@ -1,6 +1,5 @@
 from tkinter import Tk, Canvas
 from collections import deque
-import gpustat
 import wmi
 
 # Set the temperature thresholds
@@ -26,24 +25,15 @@ ROW_HEIGHT = 20
 # Set the font size
 FONT_SIZE = 8
 # Set the Location to load the window
-X_LOCATION = 300
+X_LOCATION = 0
 Y_LOCATION = 180
-
+# Track GPU ID's
+gpus = []
 
 def get_temperatures():
     temps = []
-    # Get GPU temperatures
-    stats = gpustat.new_query()
-    id = 0
-    for gpu in stats.gpus:
-        device_name = "GPU-" + str(id)
-        id += 1
-        temps.append((device_name, gpu.temperature))
-    
-    # Get CPU temperature
     # Connect to the OpenHardwareMonitor namespace
     w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
-
     # Get temperature sensor information
     temperature_infos = w.Sensor()
 
@@ -51,7 +41,12 @@ def get_temperatures():
     cpu_temp = 0
     system_temp = 0
     hdd_temp = False
+    gpu_id = 0
     for sensor in temperature_infos:
+        if sensor.SensorType == u'Temperature' and sensor.Name == "GPU Core":
+            temps.append(("GPU-" + str(gpu_id), sensor.Value))
+            gpus.append(sensor.Parent)
+            gpu_id += 1
         if sensor.SensorType == u'Temperature' and sensor.Name == "CPU Socket":
             cpu_temp = sensor.Value
         if sensor.SensorType == u'Temperature' and sensor.Name == "System":
@@ -67,14 +62,7 @@ def get_temperatures():
 
 def get_utilizations():
     values = []
-    # Get GPU temperatures
-    stats = gpustat.new_query()
-    id = 0
-    for gpu in stats.gpus:
-        device_name = "GPU-" + str(id)
-        id += 1
-        values.append((device_name, gpu.utilization))
-    
+
     # Get CPU temperature
     # Connect to the OpenHardwareMonitor namespace
     w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
@@ -88,6 +76,9 @@ def get_utilizations():
     ram_used = 0
     hdd_used = False
     for sensor in values_infos:
+        if sensor.SensorType == u'Load' and sensor.Name == "GPU Core":
+            gpu_id = gpus.index(sensor.Parent)
+            values.append(("GPU-" + str(gpu_id), sensor.Value))
         if sensor.SensorType == u'Load' and sensor.Name == "CPU Total":
             cpu_total = sensor.Value
         if sensor.SensorType == u'Clock' and sensor.Name == "CPU Core #1":
@@ -106,6 +97,36 @@ def get_utilizations():
     if hdd_used:
         hdd_used = round(hdd_used)
         values.append(("DISK", hdd_used))
+    
+    return values
+
+def get_fanspeed():
+    values = []
+
+    # Get CPU temperature
+    # Connect to the OpenHardwareMonitor namespace
+    w = wmi.WMI(namespace="root\\LibreHardwareMonitor")
+
+    # Get temperature sensor information
+    values_infos = w.Sensor()
+
+    # Iterate through sensors and print CPU temperature
+    cpu_total = 0
+    cpu_speed = MAX_CPU_MHZ
+    ram_used = 0
+    hdd_used = False
+    gpu_id = 0
+    for sensor in values_infos:
+        if sensor.SensorType == u'Control' and (sensor.Name == "GPU Fan" or sensor.Name == "GPU Fan 1"):
+            gpu_id = gpus.index(sensor.Parent)
+            values.append(("GPU-" + str(gpu_id), sensor.Value))
+        if sensor.SensorType == u'Control' and sensor.Name == "CPU Fan":
+            values.append(("CPU", sensor.Value))
+        if sensor.SensorType == u'Control' and sensor.Name == "System Fan #1":
+            values.append(("RAM", sensor.Value))
+        if sensor.SensorType == u'Load' and sensor.Name == "Total Activity" and sensor.Parent == DISK_ID:
+            values.append(("DISK", 0))
+
     
     return values
 
@@ -219,6 +240,8 @@ def update_temperatures():
     # Fetch the temperatures
     temps = get_temperatures()
     utils = get_utilizations()
+    fan_speeds = get_fanspeed()
+
 
     # Check if the window is outside the screen's dimensions
     if window.winfo_x() < 0 or window.winfo_x() > window.winfo_screenwidth() or window.winfo_y() < 0 or window.winfo_y() > window.winfo_screenheight():
@@ -247,6 +270,10 @@ def update_temperatures():
     net_row = 0
     # Calculate the average temperature for each GPU and create the new elements
     for i, (device_name, temp) in enumerate(temps):
+        fan_speed = -1
+        for fan in fan_speeds:
+            if fan[0] == device_name:
+                fan_speed = fan[1]
         # Set util samples if not set
         if len(util_poll_samples) <= i:
             util_poll_samples.append(0)
@@ -285,7 +312,7 @@ def update_temperatures():
             else:
                 shape = canvas.create_oval(5, 5 + i * ROW_HEIGHT, ROW_HEIGHT, ROW_HEIGHT + i * ROW_HEIGHT, fill=color)
                 util_poll_samples[i] = util_poll_samples[i] - 1
-            text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|\t{avg_temp}°\t|\t{utils[i][1]}%")
+            text = canvas.create_text(25, 15 + i * ROW_HEIGHT, anchor='w', font=("Arial", FONT_SIZE), fill='white', text=f"{device_name}\t|     {avg_temp}°  |  {fan_speed}%\t|\t{utils[i][1]}%")
 
             # Add the elements to the list
             device_elements.append((shape, text))
