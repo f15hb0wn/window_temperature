@@ -259,8 +259,11 @@ def close_window(event):
 canvas.tag_bind(close_button, '<Button-1>', close_window)
 canvas.pack()
 
-# Position the window at the lower left of the screen, 200 pixels from the bottom
-window.geometry('+%d+%d' % (X_LOCATION, Y_LOCATION))
+# Reset the window's position if it is outside the screen's dimensions
+if X_LOCATION < 0 or X_LOCATION > window.winfo_screenwidth() or Y_LOCATION < 0 or Y_LOCATION > window.winfo_screenheight():
+    window.geometry('+%d+%d' % (0, 0))
+else:
+    window.geometry('+%d+%d' % (X_LOCATION, Y_LOCATION))
 
 # Create a dictionary to store the last 10 temperatures for each GPU
 last_n_temps = {}
